@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiRobot Control Panel</title>
+    <link rel="stylesheet" href="/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- System Information Panel -->
+    <div class="system-info">
+        <div class="info-item">
+            <h3>CPU</h3>
+            <div id="cpu-usage">0%</div>
+        </div>
+        <div class="info-item">
+            <h3>MEMORY</h3>
+            <div id="memory-usage">0%</div>
+        </div>
+        <div class="info-item">
+            <h3>TEMP</h3>
+            <div id="temperature">0°C</div>
+        </div>
+        <div class="info-item">
+            <h3>DETECTION</h3>
+            <div id="detection-info">Disabled</div>
+        </div>
+        <div class="info-item">
+            <h3>MODEL</h3>
+            <div id="detection-model-info">None</div>
+        </div>
+        <div class="info-item">
+            <h3>MODE</h3>
+            <div id="control-mode">Manual</div>
+        </div>
+    </div>
+    
+    <!-- Fullscreen Video Feed -->
+    <div class="video-container" id="video-container">
+        <img src="/video_feed" alt="Video Feed">
+    </div>
+    
+    <!-- Mode Selection Buttons -->
+    <div class="mode-selector">
+        <button id="manual-mode-btn" class="mode-button active" onclick="switchMode('manual')">
+            <i class="fas fa-gamepad"></i> Manual
+        </button>
+        <button id="autonomous-mode-btn" class="mode-button" onclick="switchMode('autonomous')">
+            <i class="fas fa-robot"></i> Autonomous
+        </button>
+    </div>
+    
+    <!-- Controls Overlay -->
+    <div class="controls-overlay" id="manual-controls">
+        <h2>Robot Control</h2>
+        
+        <!-- Joystick Control -->
+        <div class="joystick-container">
+            <div id="joystick-area">
+                <div id="joystick-base">
+                    <div id="joystick-thumb"></div>
+                </div>
+            </div>
+            <div class="joystick-status">
+                <div>Direction: <span id="joystick-direction">center</span></div>
+                <div>Power: <span id="joystick-power">0%</span></div>
+            </div>
+        </div>
+        
+        <!-- Horizontal Tabs -->
+        <div class="tabs-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="openTab('camera-tab')">Camera</button>
+                <button class="tab-button" onclick="openTab('detection-tab')">Person Detection</button>
+            </div>
+            
+            <!-- Camera Settings Tab -->
+            <div id="camera-tab" class="tab-content active">
+                <div class="settings-row">
+                    <div class="setting-item">
+                        <label for="camera-select">Camera:</label>
+                        <select id="camera-select" onchange="switchCamera()">
+                            {% for camera in cameras %}
+                            <option value="{{ camera }}" {% if camera == selected_camera %}selected{% endif %}>Camera {{ camera }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item toggle-switch">
+                        <span>Rotate Camera:</span>
+                        <input type="checkbox" id="rotate-view" onchange="toggleRotation()">
+                        <label for="rotate-view">Toggle</label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="speed">Speed: <span id="speed-label">50%</span></label>
+                    <input type="range" id="speed" min="0" max="1" step="0.1" value="0.5" oninput="updateSpeedLabel(this.value)">
+                </div>
+            </div>
+            
+            <!-- Person Detection Tab -->
+            <div id="detection-tab" class="tab-content">
+                <div class="settings-row">
+                    <div class="setting-item toggle-switch">
+                        <span>Detection:</span>
+                        <input type="checkbox" id="detection-toggle" onchange="toggleDetection()">
+                        <label for="detection-toggle">Toggle</label>
+                    </div>
+                    
+                    <div class="setting-item" id="model-selection" style="display: none;">
+                        <label for="detection-model">Model:</label>
+                        <select id="detection-model" onchange="changeDetectionModel()">
+                            <option value="mobilenet">MobileNet SSD (Faster)</option>
+                            <option value="yolov3">YOLOv3-Tiny (More Accurate)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="follow-controls" style="display: none;">
+                    <button id="follow-button" class="action-button" onclick="toggleFollow()">Start Following</button>
+                    
+                    <div class="setting-item">
+                        <label for="follow-speed">Follow Speed: <span id="follow-speed-label">50%</span></label>
+                        <input type="range" id="follow-speed" min="0.1" max="1" step="0.1" value="0.5" oninput="updateFollowSpeed(this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status" id="status-message">Ready</div>
+    </div>
+    
+    <!-- Autonomous Controls Overlay -->
+    <div class="controls-overlay" id="autonomous-controls" style="display: none;">
+        <h2>Autonomous Navigation</h2>
+        
+        <div class="settings-row">
+            <div class="setting-item toggle-switch">
+                <span>Navigation:</span>
+                <input type="checkbox" id="autonomous-toggle" onchange="toggleAutonomous()">
+                <label for="autonomous-toggle">Toggle</label>
+            </div>
+            
+            <div class="setting-item toggle-switch">
+                <span>Data Collection:</span>
+                <input type="checkbox" id="data-collection-toggle" onchange="toggleDataCollection()">
+                <label for="data-collection-toggle">Toggle</label>
+            </div>
+        </div>
+        
+        <div class="setting-item">
+            <label for="autonomous-speed">Navigation Speed: <span id="autonomous-speed-label">40%</span></label>
+            <input type="range" id="autonomous-speed" min="0.1" max="1" step="0.1" value="0.4" oninput="updateAutonomousSpeed(this.value)">
+        </div>
+        
+        <button id="save-data-button" class="action-button" onclick="saveNavigationData()">Save Training Data</button>
+        <div id="memory-size" class="memory-info">Memory: 0 samples</div>
+        
+        <div class="status" id="autonomous-status-message">Ready</div>
+    </div>
+    
+    <script>
+        // Global variables for joystick
+        let joystickActive = false;
+        let joystickBaseElement = null;
+        let joystickThumbElement = null;
+        let joystickBaseRect = null;
+        let joystickBaseX = 0;
+        let joystickBaseY = 0;
+        let joystickLimitRadius = 0;
+        let currentDirection = "center";
+        let currentPower = 0;
+        let joystickInterval = null;
+        
+        // Initialize joystick
+        function initJoystick() {
+            joystickBaseElement = document.getElementById("joystick-base");
+            joystickThumbElement = document.getElementById("joystick-thumb");
+            
+            // Get joystick dimensions
+            joystickBaseRect = joystickBaseElement.getBoundingClientRect();
+            joystickBaseX = joystickBaseRect.width / 2;
+            joystickBaseY = joystickBaseRect.height / 2;
+            joystickLimitRadius = joystickBaseRect.width / 2 * 0.8; // 80% of radius
+            
+            // Center the thumb initially - using transform property instead of left/top
+            centerJoystickThumb();
+            
+            // Add event listeners for mouse/touch
+            joystickBaseElement.addEventListener("mousedown", startJoystick);
+            document.addEventListener("mousemove", moveJoystick);
+            document.addEventListener("mouseup", endJoystick);
+            
+            // Touch events
+            joystickBaseElement.addEventListener("touchstart", function(e) {
+                e.preventDefault();
+                startJoystick(e.touches[0]);
+            });
+            document.addEventListener("touchmove", function(e) {
+                e.preventDefault();
+                moveJoystick(e.touches[0]);
+            });
+            document.addEventListener("touchend", endJoystick);
+        }
+
+        // Center the joystick thumb
+        function centerJoystickThumb() {
+            // Using transform property to center the thumb
+            joystickThumbElement.style.left = "50%";
+            joystickThumbElement.style.top = "50%";
+            joystickThumbElement.style.transform = "translate(-50%, -50%)";
+        }
+
+        // Start joystick control
+        function startJoystick(e) {
+            joystickActive = true;
+            
+            // Get joystick base dimensions
+            joystickBaseRect = joystickBaseElement.getBoundingClientRect();
+            joystickBaseX = joystickBaseRect.width / 2;
+            joystickBaseY = joystickBaseRect.height / 2;
+            joystickLimitRadius = joystickBaseRect.width / 2 * 0.8; // 80% of radius
+            
+            // Move joystick thumb to pointer position
+            moveJoystick(e);
+            
+            // Start sending commands at regular intervals
+            if (joystickInterval === null) {
+                joystickInterval = setInterval(sendJoystickCommand, 100);
+            }
+        }
+        
+        // Move joystick thumb
+        function moveJoystick(e) {
+            if (!joystickActive) return;
+            
+            // Calculate position relative to joystick base center
+            const rect = joystickBaseElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Calculate distance from center
+            const deltaX = x - joystickBaseX;
+            const deltaY = y - joystickBaseY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Limit distance to joystick radius
+            let limitedX, limitedY;
+            if (distance > joystickLimitRadius) {
+                const angle = Math.atan2(deltaY, deltaX);
+                limitedX = joystickBaseX + joystickLimitRadius * Math.cos(angle);
+                limitedY = joystickBaseY + joystickLimitRadius * Math.sin(angle);
+            } else {
+                limitedX = x;
+                limitedY = y;
+            }
+            
+            // Move joystick thumb using percentages and transform
+            const percentX = (limitedX / joystickBaseRect.width) * 100;
+            const percentY = (limitedY / joystickBaseRect.height) * 100;
+            joystickThumbElement.style.left = percentX + "%";
+            joystickThumbElement.style.top = percentY + "%";
+            joystickThumbElement.style.transform = "translate(-50%, -50%)";
+            
+            // Calculate normalized position (-1 to 1)
+            const normalizedX = (limitedX - joystickBaseX) / joystickLimitRadius;
+            const normalizedY = (limitedY - joystickBaseY) / joystickLimitRadius;
+            
+            // Determine direction and power
+            determineDirection(normalizedX, normalizedY);
+        }
+        
+        // End joystick control
+        function endJoystick() {
+            if (!joystickActive) return;
+            
+            joystickActive = false;
+            
+            // Reset joystick thumb position
+            centerJoystickThumb();
+            
+            // Stop sending commands
+            if (joystickInterval !== null) {
+                clearInterval(joystickInterval);
+                joystickInterval = null;
+            }
+            
+            // Send stop command
+            sendCommand("stop");
+            
+            // Reset direction and power
+            currentDirection = "center";
+            currentPower = 0;
+            updateJoystickStatus();
+        }
+        
+        // Determine direction and power from joystick position
+        function determineDirection(x, y) {
+            // Calculate power (0 to 1)
+            const distance = Math.sqrt(x * x + y * y);
+            currentPower = Math.min(distance, 1.0);
+            
+            // Determine direction based on angle
+            const angle = Math.atan2(y, x) * 180 / Math.PI;
+            
+            if (currentPower < 0.2) {
+                currentDirection = "center";
+            } else if (angle > -45 && angle < 45) {
+                currentDirection = "right";
+            } else if (angle >= 45 && angle < 135) {
+                currentDirection = "backward";
+            } else if (angle >= -135 && angle < -45) {
+                currentDirection = "forward";
+            } else {
+                currentDirection = "left";
+            }
+            
+            updateJoystickStatus();
+        }
+        
+        // Update joystick status display
+        function updateJoystickStatus() {
+            document.getElementById("joystick-direction").innerText = currentDirection;
+            document.getElementById("joystick-power").innerText = Math.round(currentPower * 100) + "%";
+        }
+        
+        // Send joystick command
+        function sendJoystickCommand() {
+            if (currentDirection !== "center" && currentPower > 0.2) {
+                const speed = document.getElementById("speed").value * currentPower;
+                sendCommand(currentDirection, speed);
+            }
+        }
+        
+        // Update speed label
+        function updateSpeedLabel(value) {
+            const percentage = Math.round(value * 100);
+            document.getElementById("speed-label").innerText = `${percentage}%`;
+        }
+        
+        // Update follow speed label
+        function updateFollowSpeed(value) {
+            const percentage = Math.round(value * 100);
+            document.getElementById("follow-speed-label").innerText = `${percentage}%`;
+            
+            // If following is active, update the speed
+            if (document.getElementById("follow-button").innerText === "Stop Following") {
+                fetch('/follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=speed&speed=${value}`
+                });
+            }
+        }
+
+        // Send command to control robot
+        function sendCommand(action, customSpeed = null) {
+            const speed = customSpeed !== null ? customSpeed : document.getElementById("speed").value;
+            const camera_id = document.getElementById("camera-select").value;
+
+            // Send AJAX request
+            fetch('/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${action}&speed=${speed}&camera_id=${camera_id}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("status-message").innerText = `Command: ${action} | Speed: ${Math.round(speed * 100)}%`;
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to send command.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+
+        // Switch camera
+        function switchCamera() {
+            sendCommand('stop'); // Stop motors when switching cameras
+            
+            // Force reload of video feed
+            const videoFeed = document.querySelector("#video-container img");
+            const src = videoFeed.src;
+            videoFeed.src = "";
+            setTimeout(() => {
+                videoFeed.src = src + "?t=" + new Date().getTime();
+            }, 500);
+        }
+
+        // Toggle camera rotation
+        function toggleRotation() {
+            const videoContainer = document.getElementById("video-container");
+            const isChecked = document.getElementById("rotate-view").checked;
+
+            if (isChecked) {
+                videoContainer.classList.add("rotated");
+            } else {
+                videoContainer.classList.remove("rotated");
+            }
+        }
+        
+        // Toggle person detection
+        function toggleDetection() {
+            const isChecked = document.getElementById("detection-toggle").checked;
+            const followControls = document.getElementById("follow-controls");
+            
+            fetch('/detection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${isChecked ? 'enable' : 'disable'}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("status-message").innerText = 
+                        `Person detection ${data.enabled ? 'enabled' : 'disabled'}`;
+                    
+                    // Show/hide follow controls
+                    followControls.style.display = data.enabled ? 'block' : 'none';
+
+                    // Show/hide model selection dropdown
+                    const modelSelection = document.getElementById("model-selection");
+                    modelSelection.style.display = data.enabled ? 'block' : 'none';
+                    
+                    // If detection is disabled, ensure following is stopped
+                    if (!data.enabled && document.getElementById("follow-button").innerText === "Stop Following") {
+                        toggleFollow();
+                    }
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to toggle detection.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+        
+        // Toggle person following
+        function toggleFollow() {
+            const followButton = document.getElementById("follow-button");
+            const isFollowing = followButton.innerText === "Stop Following";
+            const action = isFollowing ? 'stop' : 'start';
+            
+            fetch('/follow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${action}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    const newState = action === 'start' ? true : false;
+                    followButton.innerText = newState ? "Stop Following" : "Start Following";
+                    followButton.className = newState ? "action-button stop" : "action-button";
+                    
+                    document.getElementById("status-message").innerText = 
+                        `Person following ${newState ? 'started' : 'stopped'}`;
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to toggle following.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+
+        // Change detection model
+        function changeDetectionModel() {
+            const model = document.getElementById("detection-model").value;
+            
+            fetch('/detection_model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `model_type=${model}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("status-message").innerText = 
+                        `Detection model changed to ${data.active_model}`;
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to change detection model.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+        
+        // Toggle autonomous navigation
+        function toggleAutonomous() {
+            const isChecked = document.getElementById("autonomous-toggle").checked;
+            
+            fetch('/autonomous', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${isChecked ? 'start' : 'stop'}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("autonomous-status-message").innerText = 
+                        `Autonomous navigation ${data.active ? 'started' : 'stopped'}`;
+                } else {
+                    document.getElementById("autonomous-status-message").innerText = "Failed to toggle autonomous navigation.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("autonomous-status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+
+        // Update autonomous navigation speed
+        function updateAutonomousSpeed(value) {
+            const percentage = Math.round(value * 100);
+            document.getElementById("autonomous-speed-label").innerText = `${percentage}%`;
+            
+            fetch('/autonomous', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=speed&speed=${value}`
+            });
+        }
+
+        // Toggle data collection
+        function toggleDataCollection() {
+            const isChecked = document.getElementById("data-collection-toggle").checked;
+            
+            fetch('/autonomous', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=toggle_data_collection&enabled=${isChecked}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("autonomous-status-message").innerText = 
+                        `Data collection ${data.data_collection ? 'enabled' : 'disabled'}`;
+                }
+            });
+        }
+
+        // Save navigation data
+        function saveNavigationData() {
+            fetch('/autonomous', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=save_data`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("autonomous-status-message").innerText = "Navigation data saved successfully.";
+                } else {
+                    document.getElementById("autonomous-status-message").innerText = "Failed to save navigation data.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("autonomous-status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+        
+        // Switch between manual and autonomous modes
+        function switchMode(mode) {
+            const manualBtn = document.getElementById("manual-mode-btn");
+            const autonomousBtn = document.getElementById("autonomous-mode-btn");
+            const manualControls = document.getElementById("manual-controls");
+            const autonomousControls = document.getElementById("autonomous-controls");
+            const controlModeDisplay = document.getElementById("control-mode");
+            
+            if (mode === "manual") {
+                manualBtn.classList.add("active");
+                autonomousBtn.classList.remove("active");
+                manualControls.style.display = "block";
+                autonomousControls.style.display = "none";
+                controlModeDisplay.innerText = "Manual";
+            } else {
+                manualBtn.classList.remove("active");
+                autonomousBtn.classList.add("active");
+                manualControls.style.display = "none";
+                autonomousControls.style.display = "block";
+                controlModeDisplay.innerText = "Autonomous";
+            }
+        }
+        
+        // Open tab
+        function openTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            // Show the selected tab content
+            document.getElementById(tabId).classList.add("active");
+            
+            // Add active class to the clicked button
+            event.currentTarget.classList.add("active");
+        }
+
+        // Update system information
+        async function updateSystemInfo() {
+            while (true) {
+                try {
+                    const response = await fetch('/system_info');
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.cpu !== undefined) {
+                            document.getElementById("cpu-usage").innerText = `${data.cpu}%`;
+                        }
+                        
+                        if (data.memory !== undefined) {
+                            document.getElementById("memory-usage").innerText = `${data.memory}%`;
+                        }
+                        
+                        if (data.temperature !== undefined) {
+                            document.getElementById("temperature").innerText = `${data.temperature.toFixed(1)}°C`;
+                        } else {
+                            document.getElementById("temperature").innerText = "N/A";
+                        }
+                        
+                        // Update detection toggle to match server state
+                        const detectionToggle = document.getElementById("detection-toggle");
+                        if (detectionToggle.checked !== data.detection_enabled) {
+                            detectionToggle.checked = data.detection_enabled;
+                            document.getElementById("follow-controls").style.display = 
+                                data.detection_enabled ? 'block' : 'none';
+                            document.getElementById("model-selection").style.display = 
+                                data.detection_enabled ? 'block' : 'none';
+                        }
+
+                        // Update model selection to match server state
+                        if (data.detection_model) {
+                            const modelSelect = document.getElementById("detection-model");
+                            if (modelSelect.value !== data.detection_model) {
+                                modelSelect.value = data.detection_model;
+                            }
+                            document.getElementById("detection-model-info").innerText = 
+                                data.detection_model === "mobilenet" ? "MobileNet" : "YOLOv3";
+                        } else {
+                            document.getElementById("detection-model-info").innerText = "None";
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching system info:", error);
+                }
+                
+                // Update detection info
+                try {
+                    const response = await fetch('/detection_info');
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById("detection-info").innerText = data.info;
+                    }
+                } catch (error) {
+                    console.error("Error fetching detection info:", error);
+                }
+                
+                // Update autonomous info
+                try {
+                    const response = await fetch('/autonomous_info');
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Update autonomous toggle to match server state
+                        const autonomousToggle = document.getElementById("autonomous-toggle");
+                        if (autonomousToggle.checked !== data.active) {
+                            autonomousToggle.checked = data.active;
+                        }
+                        
+                        // Update data collection toggle
+                        const dataCollectionToggle = document.getElementById("data-collection-toggle");
+                        if (dataCollectionToggle.checked !== data.data_collection) {
+                            dataCollectionToggle.checked = data.data_collection;
+                        }
+                        
+                        // Update memory size
+                        document.getElementById("memory-size").innerText = 
+                            `Memory: ${data.memory_size} samples`;
+                    }
+                } catch (error) {
+                    console.error("Error fetching autonomous info:", error);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Update every second
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize joystick
+            initJoystick();
+            
+            // Start updating system info
+            updateSystemInfo();
+            
+            // Prevent default touch behavior to avoid scrolling while controlling
+            const touchElements = document.querySelectorAll('.joystick-container, .control-button');
+            touchElements.forEach(element => {
+                element.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                });
+                element.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                });
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
