@@ -48,7 +48,7 @@
 
 ## How to Use
 1. Clone this repository. Save all the files to your project directory.
-2. Go to your dir "PiRobot-V.1" in your computer.
+2. Go to your dir "PiRobot-V.3" in your computer.
 3. Run virtual environment of your preference, in this case I´m using `venv` to create environment:
     ```plaintext
     python -m venv PiRobot
