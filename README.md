@@ -1,33 +1,26 @@
-@@ -4,6 +4,7 @@ https://github.com/user-attachments/assets/c549cace-67d4-4eec-b868-973418a37e95
- 
- This project implements a self-driving robot using Raspberry Pi 3B that can be manually controlled and has the ability to detect and follow people. The robot features a web-based control interface that can be accessed from any device on the same network.
+
+ This project implements a self-driving robot using Raspberry Pi 3B that can be manually controlled and has the ability to detect and follow person. The robot control based a web-based interface that can be accessed from any device in the same network.
  
  ## Features
- 
-@@ -12,6 +13,8 @@ This project implements a self-driving robot using Raspberry Pi 3B that can be ma
+
  - Person detection and tracking using TensorFlow Lite or YOLOv3-Tiny
  - Automatic person following
+ - Adjust its speed and direction based on the person's position and distance
  - System monitoring (CPU, memory, temperature)
-+- Autonomous navigation with obstacle avoidance
-+- Data collection for training autonomous behaviors
+ - Autonomous navigation with obstacle avoidance
+ - Data collection for training autonomous behaviors
  - Mobile-friendly interface
+   
  
- ## Hardware Requirements
-@@ -42,6 +45,15 @@ I've made all the improvements from [PiRobot V.0](https://github.com/ihandrian/Pi
- - The robot will adjust its speed and direction based on the person's position and distance
- 
- 
-+### 2. Autonomous Navigation
-+
-+- Added a simple obstacle detection system using computer vision
-+- Implemented basic path planning and obstacle avoidance
-+- Added data collection for training autonomous behaviors
-+- Implemented experience replay with a memory buffer for improved steering predictions
-+- Added controls to enable/disable autonomous navigation and data collection
-+
-+
- ### 2. Fullscreen Video Feed with to enable/disable autonomous navigation and data collection
+## Key Improvements Implemented
 
+### 1. Autonomous Navigation
+- Added a simple obstacle detection system using computer vision
+- Implemented basic path planning and obstacle avoidance
+- Added data collection for training autonomous behaviors
+- Implemented experience replay with a memory buffer for improved steering predictions
+- Added controls to enable/disable autonomous navigation and data collection
+- Implement a combined approach using classical lane detection and behavior cloning from manual steering inputs. This hybrid approach will help the robot learn better navigation skills.
 
 ### 2. Fullscreen Video Feed with Overlay Controls
 
@@ -36,7 +29,6 @@
 - Replaced text buttons with arrow icons for more intuitive control
 - The control panel has 80% opacity
 - Added touch support for mobile devices
-
 
 ### 3. System Information Panel
 
@@ -54,11 +46,54 @@
 - Added controls to adjust the following speed
 - Made the interface fully responsive for different screen sizes
 
-
 ## How to Use
 1. Clone this repository. Save all the files to your project directory.
 2. Go to your dir "PiRobot-V.1" in your computer.
 3. Run virtual environment of your preference, in this case I´m using `venv` to create environment:
     ```plaintext
     python -m venv PiRobot
+    ```
+     - Activate:
+         - Windows:
+          ```plaintext
+          PiRobot\Scripts\activate
+          ```
+         - Linux/macOS:
+          ```plaintext
+          source PiRobot/bin/activate
+          ```
+      - Deactivate:
+          ```plaintext
+          deactivate
+          ```
+3. Install the required dependencies:
+
+```plaintext
+pip3 install -r requirements.txt
+```
+
+
+2. Run the file `main.py`:
+
+```plaintext
+python main.py
+```
+
+3. Access the control panel at `http://<your_pi_ip>:5002`
+4. To use person following:
+    - Toggle "Detection" to enable person detection
+    - Click "Start Following" to make the robot follow the nearest person
+    - Adjust the follow speed as needed
+
+The system is optimized for Raspberry Pi 3B and uses lightweight detection models to ensure smooth performance.
+### Future Development
+
+1. **Sensor Integration**: Add classes for different sensors (ultrasonic, IR, etc.)
+2. **Autonomous Navigation**: Implement path planning and obstacle avoidance
+3. ~~**Computer Vision**: Add object detection using TensorFlow Lite or similar~~
+4. **Data Logging**: Implement data collection for training autonomous behaviors
+
+Support page:
+- Paypal https://paypal.me/IrfanHandrian
+- Buy me Coffee https://buymeacoffee.com/handrianirv
 
