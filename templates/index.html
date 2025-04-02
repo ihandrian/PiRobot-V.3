@@ -41,14 +41,16 @@
         <img src="/video_feed" alt="Video Feed">
     </div>
     
-    <!-- Mode Selection Buttons -->
+    <!-- Mode Selection Slider -->
     <div class="mode-selector">
-        <button id="manual-mode-btn" class="mode-button active" onclick="switchMode('manual')">
-            <i class="fas fa-gamepad"></i> Manual
-        </button>
-        <button id="autonomous-mode-btn" class="mode-button" onclick="switchMode('autonomous')">
-            <i class="fas fa-robot"></i> Autonomous
-        </button>
+        <div class="mode-slider-container">
+            <div class="mode-slider-labels">
+                <span>Manual</span>
+                <span>Autonomous</span>
+            </div>
+            <input type="range" id="mode-slider" class="mode-slider" min="0" max="1" step="1" value="0" onchange="switchModeBySlider(this.value)">
+            <div class="current-mode" id="current-mode-display">Manual Mode</div>
+        </div>
     </div>
     
     <!-- Controls Overlay -->
@@ -155,7 +157,17 @@
             <input type="range" id="autonomous-speed" min="0.1" max="1" step="0.1" value="0.4" oninput="updateAutonomousSpeed(this.value)">
         </div>
         
+        <div class="setting-item">
+            <label for="navigation-mode">Navigation Mode:</label>
+            <select id="navigation-mode" onchange="changeNavigationMode()">
+                <option value="LANE_FOLLOWING">Lane Following</option>
+                <option value="BEHAVIOR_CLONING">Behavior Cloning</option>
+                <option value="HYBRID" selected>Hybrid (Recommended)</option>
+            </select>
+        </div>
+        
         <button id="save-data-button" class="action-button" onclick="saveNavigationData()">Save Training Data</button>
+        <button id="train-model-button" class="action-button" onclick="trainModel()">Train Model</button>
         <div id="memory-size" class="memory-info">Memory: 0 samples</div>
         
         <div class="status" id="autonomous-status-message">Ready</div>
@@ -322,6 +334,8 @@
         
         // Update joystick status display
         function updateJoystickStatus() {
+            document.getElementById("joystick-direction").innerText = currentDirection;
+              {
             document.getElementById("joystick-direction").innerText = currentDirection;
             document.getElementById("joystick-power").innerText = Math.round(currentPower * 100) + "%";
         }
@@ -499,7 +513,7 @@
         function toggleAutonomous() {
             const isChecked = document.getElementById("autonomous-toggle").checked;
             
-            fetch('/autonomous', {
+            fetch('/hybrid_navigation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=${isChecked ? 'start' : 'stop'}`
@@ -519,12 +533,36 @@
             });
         }
 
+        // Change navigation mode
+        function changeNavigationMode() {
+            const mode = document.getElementById("navigation-mode").value;
+            
+            fetch('/hybrid_navigation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=mode&mode=${mode}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("autonomous-status-message").innerText = 
+                        `Navigation mode set to ${data.mode}`;
+                } else {
+                    document.getElementById("autonomous-status-message").innerText = "Failed to change navigation mode.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("autonomous-status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+
         // Update autonomous navigation speed
         function updateAutonomousSpeed(value) {
             const percentage = Math.round(value * 100);
             document.getElementById("autonomous-speed-label").innerText = `${percentage}%`;
             
-            fetch('/autonomous', {
+            fetch('/hybrid_navigation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=speed&speed=${value}`
@@ -535,7 +573,7 @@
         function toggleDataCollection() {
             const isChecked = document.getElementById("data-collection-toggle").checked;
             
-            fetch('/autonomous', {
+            fetch('/hybrid_navigation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=toggle_data_collection&enabled=${isChecked}`
@@ -551,7 +589,7 @@
 
         // Save navigation data
         function saveNavigationData() {
-            fetch('/autonomous', {
+            fetch('/hybrid_navigation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=save_data`
@@ -570,27 +608,63 @@
             });
         }
         
+        // Train model
+        function trainModel() {
+            document.getElementById("autonomous-status-message").innerText = "Training model... This may take a moment.";
+            document.getElementById("train-model-button").disabled = true;
+            
+            fetch('/hybrid_navigation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=train_model&epochs=10`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("autonomous-status-message").innerText = data.message;
+                } else {
+                    document.getElementById("autonomous-status-message").innerText = "Failed to train model.";
+                }
+                document.getElementById("train-model-button").disabled = false;
+            })
+            .catch(error => {
+                document.getElementById("autonomous-status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+                document.getElementById("train-model-button").disabled = false;
+            });
+        }
+        
+        // Switch between manual and autonomous modes using slider
+        function switchModeBySlider(value) {
+            const mode = parseInt(value) === 0 ? 'manual' : 'autonomous';
+            switchMode(mode);
+        }
+        
         // Switch between manual and autonomous modes
         function switchMode(mode) {
-            const manualBtn = document.getElementById("manual-mode-btn");
-            const autonomousBtn = document.getElementById("autonomous-mode-btn");
+            const modeSlider = document.getElementById("mode-slider");
+            const currentModeDisplay = document.getElementById("current-mode-display");
             const manualControls = document.getElementById("manual-controls");
             const autonomousControls = document.getElementById("autonomous-controls");
             const controlModeDisplay = document.getElementById("control-mode");
             
             if (mode === "manual") {
-                manualBtn.classList.add("active");
-                autonomousBtn.classList.remove("active");
+                modeSlider.value = 0;
+                currentModeDisplay.innerText = "Manual Mode";
                 manualControls.style.display = "block";
                 autonomousControls.style.display = "none";
                 controlModeDisplay.innerText = "Manual";
             } else {
-                manualBtn.classList.remove("active");
-                autonomousBtn.classList.add("active");
+                modeSlider.value = 1;
+                currentModeDisplay.innerText = "Autonomous Mode";
                 manualControls.style.display = "none";
                 autonomousControls.style.display = "block";
                 controlModeDisplay.innerText = "Autonomous";
             }
+            
+            // Add smooth transition animation
+            manualControls.style.transition = "opacity 0.3s ease";
+            autonomousControls.style.transition = "opacity 0.3s ease";
         }
         
         // Open tab
@@ -673,9 +747,9 @@
                     console.error("Error fetching detection info:", error);
                 }
                 
-                // Update autonomous info
+                // Update hybrid navigation info
                 try {
-                    const response = await fetch('/autonomous_info');
+                    const response = await fetch('/hybrid_navigation_info');
                     if (response.ok) {
                         const data = await response.json();
                         
@@ -693,10 +767,18 @@
                         
                         // Update memory size
                         document.getElementById("memory-size").innerText = 
-                            `Memory: ${data.memory_size} samples`;
+                            `Memory: ${data.buffer_size} samples`;
+                            
+                        // Update navigation mode
+                        if (data.mode) {
+                            const navigationMode = document.getElementById("navigation-mode");
+                            if (navigationMode.value !== data.mode) {
+                                navigationMode.value = data.mode;
+                            }
+                        }
                     }
                 } catch (error) {
-                    console.error("Error fetching autonomous info:", error);
+                    console.error("Error fetching hybrid navigation info:", error);
                 }
                 
                 await new Promise(resolve => setTimeout(resolve, 1000)); // Update every second
@@ -712,7 +794,7 @@
             updateSystemInfo();
             
             // Prevent default touch behavior to avoid scrolling while controlling
-            const touchElements = document.querySelectorAll('.joystick-container, .control-button');
+            const touchElements = document.querySelectorAll('.joystick-container, .control-button, .mode-slider');
             touchElements.forEach(element => {
                 element.addEventListener('touchstart', function(e) {
                     e.preventDefault();
@@ -723,6 +805,22 @@
                 element.addEventListener('touchend', function(e) {
                     e.preventDefault();
                 });
+            });
+            
+            // Add animation to mode transitions
+            const modeSlider = document.getElementById("mode-slider");
+            modeSlider.addEventListener('input', function() {
+                // Add visual feedback during sliding
+                const value = parseFloat(this.value);
+                const currentModeDisplay = document.getElementById("current-mode-display");
+                
+                if (value < 0.5) {
+                    currentModeDisplay.innerText = "Manual Mode";
+                    currentModeDisplay.style.color = "#fff";
+                } else {
+                    currentModeDisplay.innerText = "Autonomous Mode";
+                    currentModeDisplay.style.color = "#0A84FF";
+                }
             });
         });
     </script>

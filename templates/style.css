@@ -1,10 +1,12 @@
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
   overflow: hidden;
   background-color: #000;
   color: white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Fullscreen video container */
@@ -38,6 +40,8 @@ body {
   left: 0;
   right: 0;
   background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: white;
   padding: 10px;
   z-index: 10;
@@ -54,54 +58,94 @@ body {
 
 .info-item h3 {
   margin: 0;
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 12px;
+  opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 1px;
+  font-weight: 500;
 }
 
 .info-item div {
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 500;
 }
 
-/* Mode selector buttons */
+/* Mode selector slider */
 .mode-selector {
   position: fixed;
   top: 70px;
   right: 20px;
   z-index: 10;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mode-slider-container {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
 }
 
-.mode-button {
-  padding: 12px 20px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  transition: all 0.3s ease;
+.mode-slider-labels {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.mode-button i {
-  font-size: 18px;
+.mode-slider {
+  -webkit-appearance: none;
+  width: 200px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  outline: none;
 }
 
-.mode-button:hover {
-  background-color: rgba(0, 0, 0, 0.9);
+.mode-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
 }
 
-.mode-button.active {
-  background-color: #4caf50;
+.mode-slider::-webkit-slider-thumb:hover {
+  background: #f2f2f2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mode-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.mode-slider::-moz-range-thumb:hover {
+  background: #f2f2f2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.current-mode {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 5px;
 }
 
 /* Controls overlay */
@@ -109,12 +153,15 @@ body {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.8);
-  border-radius: 10px;
-  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 20px;
   z-index: 10;
   max-width: 600px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
 }
 
 .controls-overlay h2 {
@@ -122,8 +169,9 @@ body {
   margin-bottom: 15px;
   font-size: 20px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 10px;
+  font-weight: 500;
 }
 
 /* Joystick styles */
@@ -149,20 +197,25 @@ body {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   position: relative;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 #joystick-thumb {
   width: 50px;
   height: 50px;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+#joystick-thumb:active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .joystick-status {
@@ -179,7 +232,7 @@ body {
 
 .tab-buttons {
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 15px;
 }
 
@@ -192,6 +245,7 @@ body {
   font-size: 14px;
   opacity: 0.7;
   transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .tab-button:hover {
@@ -200,7 +254,8 @@ body {
 
 .tab-button.active {
   opacity: 1;
-  border-bottom: 2px solid #4caf50;
+  border-bottom: 2px solid #0a84ff;
+  color: #0a84ff;
 }
 
 .tab-content {
@@ -230,6 +285,7 @@ body {
   margin-bottom: 5px;
   color: white;
   font-size: 14px;
+  font-weight: 500;
 }
 
 /* Slider and other controls */
@@ -248,16 +304,36 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: white;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 select {
   width: 100%;
-  padding: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   color: white;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 30px;
 }
 
 .toggle-switch {
@@ -277,10 +353,10 @@ select {
   cursor: pointer;
   text-indent: -9999px;
   width: 50px;
-  height: 25px;
+  height: 30px;
   background: rgba(255, 255, 255, 0.2);
   display: block;
-  border-radius: 25px;
+  border-radius: 30px;
   position: relative;
 }
 
@@ -289,15 +365,16 @@ select {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 21px;
-  height: 21px;
+  width: 26px;
+  height: 26px;
   background: white;
   border-radius: 50%;
   transition: 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .toggle-switch input:checked + label {
-  background: #4caf50;
+  background: #34c759;
 }
 
 .toggle-switch input:checked + label:after {
@@ -305,40 +382,54 @@ select {
   transform: translateX(-100%);
 }
 
+.toggle-switch label:active:after {
+  width: 32px;
+}
+
 .action-button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin-top: 10px;
-  background-color: #4caf50;
+  background-color: #0a84ff;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  font-weight: bold;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 15px;
 }
 
 .action-button:hover {
-  background-color: #45a049;
+  background-color: #007aff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 120, 255, 0.3);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 120, 255, 0.3);
 }
 
 .action-button.stop {
-  background-color: #f44336;
+  background-color: #ff3b30;
 }
 
 .action-button.stop:hover {
-  background-color: #d32f2f;
+  background-color: #ff2d20;
+  box-shadow: 0 4px 10px rgba(255, 45, 32, 0.3);
 }
 
 /* Status message */
 .status {
   margin-top: 15px;
-  padding: 8px;
-  border-radius: 5px;
+  padding: 10px;
+  border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
   font-size: 14px;
   text-align: center;
+  font-weight: 500;
 }
 
 /* Memory info */
@@ -354,7 +445,7 @@ select {
   .controls-overlay {
     left: 10px;
     bottom: 10px;
-    padding: 10px;
+    padding: 15px;
     max-width: 90%;
   }
 
@@ -368,7 +459,7 @@ select {
   }
 
   .info-item h3 {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .info-item div {
@@ -378,7 +469,12 @@ select {
   .mode-selector {
     top: auto;
     bottom: 20px;
-    right: 20px;
+    right: 10px;
+    padding: 10px;
+  }
+
+  .mode-slider {
+    width: 150px;
   }
 
   #joystick-area {
